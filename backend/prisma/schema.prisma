@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  sites     Site[]
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model Site {
+  id          Int          @id @default(autoincrement())
+  name        String
+  address     String
+  companyName String
+  companySiret String?     // Added for official compliance
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id])
+  entries     WasteEntry[]
+  createdAt   DateTime     @default(now())
+}
+
+model WasteEntry {
+  id            Int      @id @default(autoincrement())
+  siteId        Int
+  site          Site     @relation(fields: [siteId], references: [id])
+  wasteCode     String?  // Rubrique déchet
+  wasteType     String
+  adrMentions   String?  // Section 4: ADR, RID, etc.
+  consistance   String?  // solide, liquide, gazeux
+  packaging     String?  // Section 5: benne, citerne, etc.
+  volume        String   // Section 6: Quantité
+  quantityType  String?  // Section 6: réelle ou estimée
+  carrierName   String
+  carrierSiret  String?
+  outletName    String
+  outletSiret   String?
+  outletAddress String?  
+  signingCity   String?  
+  signatureData String // base64 string
+  createdAt     DateTime @default(now())
+}

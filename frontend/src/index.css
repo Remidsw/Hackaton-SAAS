@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-slate-900 antialiased selection:bg-purple-200 selection:text-purple-900 transition-colors duration-300 bg-transparent;
+  }
+  
+  .dark body {
+    @apply text-slate-200 selection:bg-purple-900 selection:text-purple-100;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-5 py-2.5 rounded-xl font-semibold transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply bg-purple-700 text-white shadow-lg shadow-purple-900/30 hover:bg-purple-800 hover:shadow-purple-900/40;
+  }
+
+  .btn-secondary {
+    @apply bg-white/60 text-slate-700 border border-slate-200 backdrop-blur-md hover:bg-white hover:border-purple-200 hover:text-purple-700 dark:bg-slate-900/60 dark:text-slate-300 dark:border-slate-800 hover:dark:bg-slate-900 hover:dark:border-purple-500/30 hover:dark:text-purple-400;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl backdrop-blur-md transition-all duration-200 outline-none focus:ring-2 focus:ring-purple-700/20 focus:border-purple-700 focus:bg-white dark:bg-black/40 dark:border-slate-800 dark:text-slate-200 dark:focus:bg-black/60 dark:focus:border-purple-800 dark:placeholder:text-slate-700;
+  }
+
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-xl border border-white/20 shadow-xl shadow-slate-200/50 rounded-3xl overflow-hidden dark:bg-black/60 dark:border-slate-800/40 dark:shadow-black/50;
+  }
+
+  .animated-bg {
+    @apply fixed inset-0 -z-10 bg-gradient-to-br from-slate-900 via-purple-900/40 to-indigo-900/60;
+    background-size: 400% 400%;
+    animation: gradient-xy 15s ease infinite;
+  }
+
+  .dark .animated-bg {
+    /* Fond quasi-noir avec une brume violette très subtile et sombre */
+    @apply from-black via-purple-950/30 to-slate-950;
+    background-size: 400% 400%;
+  }
+}
+
+@keyframes gradient-xy {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
