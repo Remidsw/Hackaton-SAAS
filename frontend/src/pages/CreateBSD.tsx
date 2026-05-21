@@ -21,7 +21,7 @@ export default function CreateBSD() {
   const [consistance, setConsistance] = useState('solide');
 
   // 4. Mentions ADR
-  const [adrMentions, setAdrMentions] = useState('');
+  const [adrMentions, _setAdrMentions] = useState('');
 
   // 5. Conditionnement
   const [packaging, setPackaging] = useState('benne');
@@ -29,7 +29,7 @@ export default function CreateBSD() {
   // 6. Quantité
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('t');
-  const [quantityType, setQuantityType] = useState('réelle');
+  const [quantityType, _setQuantityType] = useState('réelle');
   
   // 8. Collecteur-transporteur
   const [carrierName, setCarrierName] = useState('');
