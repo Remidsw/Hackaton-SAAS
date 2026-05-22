@@ -23,7 +23,15 @@ Application mobile-first pour la gestion des Bordereaux de Suivi des Déchets (B
 2. `npm install`
 3. `npm run dev`
 
-## Utilisation
-Connectez-vous avec :
-- **Email** : `chef@chantier.fr`
-- **Pass** : `password123`
+## Déploiement sur Vercel
+
+Le projet est configuré pour être déployé sur Vercel. 
+
+**Attention :** Le projet utilise actuellement SQLite. Sur Vercel, les fichiers SQLite sont réinitialisés à chaque redémarrage du serveur. Pour une utilisation réelle, passez à PostgreSQL (Supabase/Neon).
+
+### Configuration :
+1. Ajoutez `vercel.json` et le `package.json` racine (déjà présents).
+2. Sur Vercel, liez votre dépôt.
+3. Ajoutez les variables d'environnement :
+   - `JWT_SECRET`
+   - `VITE_API_URL=/api`

@@ -1,0 +1,9 @@
+{
+  "name": "hackaton-saas-root",
+  "private": true,
+  "scripts": {
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build:backend": "cd backend && npm install && npx prisma generate",
+    "build": "npm run build:backend && npm run build:frontend"
+  }
+}
