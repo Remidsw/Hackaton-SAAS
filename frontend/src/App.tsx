@@ -8,6 +8,8 @@ import CreateBSD from './pages/CreateBSD';
 import CreateSite from './pages/CreateSite';
 import SiteBSDs from './pages/SiteBSDs';
 import AllBSDs from './pages/AllBSDs';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -108,6 +110,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password/request" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route 
               path="/dashboard" 
               element={

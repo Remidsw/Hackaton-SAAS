@@ -68,6 +68,11 @@ export default function Login() {
               placeholder="••••••••"
               required
             />
+            <div className="mt-2 text-right">
+              <Link to="/forgot-password/request" className="text-xs text-purple-700 dark:text-purple-400 hover:underline font-medium">
+                Mot de passe oublié ?
+              </Link>
+            </div>
           </div>
           <button type="submit" className="btn btn-primary w-full py-4 text-lg">
             Se connecter
