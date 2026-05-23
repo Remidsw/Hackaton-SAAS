@@ -2,9 +2,11 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { Resend } from 'resend';
 import prisma from '../utils/prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const validateEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -85,11 +87,42 @@ export const forgotPassword = async (req: Request, res: Response) => {
       data: { resetToken, resetTokenExpiry },
     });
 
-    console.log(`Lien de réinitialisation pour ${email}: /reset-password/${resetToken}`);
+    // Déterminer l'URL de base (Vercel ou localhost)
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${baseUrl}/reset-password/${resetToken}`;
+
+    // Envoi de l'email via Resend
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: 'EcoTrace <onboarding@resend.dev>',
+          to: user.email,
+          subject: 'Réinitialisation de votre mot de passe - EcoTrace',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #6d28d9;">EcoTrace</h2>
+              <p>Bonjour ${user.name},</p>
+              <p>Vous avez demandé la réinitialisation de votre mot de passe pour votre compte EcoTrace.</p>
+              <p>Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe :</p>
+              <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #6d28d9; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Réinitialiser mon mot de passe</a>
+              <p style="margin-top: 20px; font-size: 14px; color: #64748b;">Ce lien expirera dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.</p>
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+              <p style="font-size: 12px; color: #94a3b8;">L'équipe EcoTrace</p>
+            </div>
+          `
+        });
+        console.log(`Email envoyé avec succès à ${email}`);
+      } catch (emailError) {
+        console.error('Erreur Resend:', emailError);
+      }
+    } else {
+      console.log(`[MODE DEBUG] Lien de réinitialisation: ${resetLink}`);
+    }
     
     res.json({ 
       message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.',
-      debugToken: resetToken 
+      // On garde le debugToken pour le hackathon si la clé API n'est pas encore là
+      debugToken: process.env.RESEND_API_KEY ? undefined : resetToken 
     });
   } catch (error) {
     res.status(500).json({ message: 'Erreur lors de la demande', error });
