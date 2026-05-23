@@ -30,14 +30,92 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name },
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpiry = new Date(Date.now() + 24 * 3600000); // 24 heures
+
+    await prisma.user.create({
+      data: { 
+        email, 
+        password: hashedPassword, 
+        name,
+        verificationCode,
+        verificationCodeExpiry,
+        isVerified: false
+      },
+    });
+
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: 'EcoTrace <onboarding@resend.dev>',
+          to: email,
+          subject: 'Code de vérification - EcoTrace',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #6d28d9;">EcoTrace</h2>
+              <p>Bonjour ${name},</p>
+              <p>Merci de vous être inscrit sur EcoTrace. Voici votre code de vérification :</p>
+              <div style="background-color: #f3f4f6; padding: 20px; border-radius: 12px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #6d28d9; margin: 20px 0;">
+                ${verificationCode}
+              </div>
+              <p style="margin-top: 20px; font-size: 14px; color: #64748b;">Ce code est valable pendant 24 heures. Si vous n'êtes pas à l'origine de cette inscription, vous pouvez ignorer cet email.</p>
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+              <p style="font-size: 12px; color: #94a3b8;">L'équipe EcoTrace</p>
+            </div>
+          `
+        });
+      } catch (emailError) {
+        console.error('Erreur Resend:', emailError);
+      }
+    } else {
+      console.log(`[MODE DEBUG] Code de vérification pour ${email}: ${verificationCode}`);
+    }
+
+    res.status(201).json({ 
+      message: 'Inscription réussie. Veuillez vérifier votre email pour le code de confirmation.',
+      email,
+      debugCode: process.env.RESEND_API_KEY ? undefined : verificationCode
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de l\'inscription', error: String(error) });
+  }
+};
+
+export const verifyEmail = async (req: Request, res: Response) => {
+  const { email, code } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Cet email est déjà vérifié' });
+    }
+
+    if (user.verificationCode !== code || (user.verificationCodeExpiry && user.verificationCodeExpiry < new Date())) {
+      return res.status(400).json({ message: 'Code invalide ou expiré' });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationCode: null,
+        verificationCodeExpiry: null
+      }
     });
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name } });
+    res.json({ 
+      message: 'Email vérifié avec succès', 
+      token, 
+      user: { id: user.id, email: user.email, name: user.name } 
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de l\'inscription', error: String(error) });
+    res.status(500).json({ message: 'Erreur lors de la vérification', error: String(error) });
   }
 };
 
@@ -52,6 +130,10 @@ export const login = async (req: Request, res: Response) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return res.status(400).json({ message: 'Identifiants invalides' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({ message: 'Veuillez vérifier votre email avant de vous connecter', needsVerification: true, email: user.email });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -87,11 +169,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
       data: { resetToken, resetTokenExpiry },
     });
 
-    // Déterminer l'URL de base (Vercel ou localhost)
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetLink = `${baseUrl}/reset-password/${resetToken}`;
 
-    // Envoi de l'email via Resend
     if (process.env.RESEND_API_KEY) {
       try {
         await resend.emails.send({
@@ -111,17 +191,13 @@ export const forgotPassword = async (req: Request, res: Response) => {
             </div>
           `
         });
-        console.log(`Email envoyé avec succès à ${email}`);
       } catch (emailError) {
         console.error('Erreur Resend:', emailError);
       }
-    } else {
-      console.log(`[MODE DEBUG] Lien de réinitialisation: ${resetLink}`);
     }
     
     res.json({ 
       message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.',
-      // On garde le debugToken pour le hackathon si la clé API n'est pas encore là
       debugToken: process.env.RESEND_API_KEY ? undefined : resetToken 
     });
   } catch (error) {

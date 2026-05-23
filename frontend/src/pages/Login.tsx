@@ -22,8 +22,12 @@ export default function Login() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/dashboard');
-    } catch (err) {
-      setError('Email ou mot de passe incorrect');
+    } catch (err: any) {
+      if (err.response?.status === 403 && err.response?.data?.needsVerification) {
+        navigate('/verify-email', { state: { email: err.response.data.email } });
+      } else {
+        setError('Email ou mot de passe incorrect');
+      }
     }
   };
 

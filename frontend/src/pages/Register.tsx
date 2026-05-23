@@ -30,9 +30,7 @@ export default function Register() {
 
     try {
       const { data } = await api.post('/auth/register', { email, password, name });
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
+      navigate('/verify-email', { state: { email, debugCode: data.debugCode } });
     } catch (err: any) {
       setError(err.response?.data?.message || "Erreur lors de l'inscription");
     }
