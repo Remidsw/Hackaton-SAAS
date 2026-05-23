@@ -5,17 +5,29 @@ import api from '../api/client';
 export default function VerifyEmail() {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
   const email = location.state?.email;
-  const debugCode = location.state?.debugCode;
+  const [debugCode, setDebugCode] = useState(location.state?.debugCode);
 
   useEffect(() => {
     if (!email) {
       navigate('/login');
     }
   }, [email, navigate]);
+
+  useEffect(() => {
+    let timer: any;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) value = value[value.length - 1];
@@ -25,7 +37,6 @@ export default function VerifyEmail() {
     newCode[index] = value;
     setCode(newCode);
 
-    // Auto-focus next input
     if (value && index < 5) {
       const nextInput = document.getElementById(`code-${index + 1}`);
       nextInput?.focus();
@@ -42,6 +53,7 @@ export default function VerifyEmail() {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setError('');
+    setMessage('');
     const fullCode = code.join('');
 
     if (fullCode.length !== 6) {
@@ -57,6 +69,27 @@ export default function VerifyEmail() {
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Code invalide ou expiré');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (cooldown > 0) return;
+    
+    setLoading(true);
+    setError('');
+    setMessage('');
+    
+    try {
+      const { data } = await api.post('/auth/resend-code', { email });
+      setMessage(data.message);
+      if (data.debugCode) {
+        setDebugCode(data.debugCode);
+      }
+      setCooldown(30);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur lors du renvoi du code');
     } finally {
       setLoading(false);
     }
@@ -79,6 +112,12 @@ export default function VerifyEmail() {
         {error && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm border border-red-100 dark:border-red-900/30">
             {error}
+          </div>
+        )}
+
+        {message && (
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl text-sm border border-green-100 dark:border-green-900/30">
+            {message}
           </div>
         )}
 
@@ -109,7 +148,17 @@ export default function VerifyEmail() {
           </button>
         </form>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-4">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Vous n'avez pas reçu le code ?{' '}
+            <button 
+              onClick={handleResend} 
+              disabled={loading || cooldown > 0}
+              className="text-purple-700 dark:text-purple-400 font-bold hover:underline disabled:opacity-50 disabled:no-underline"
+            >
+              {cooldown > 0 ? `Renvoyer (${cooldown}s)` : 'Renvoyer le code'}
+            </button>
+          </p>
           <button onClick={() => navigate('/login')} className="text-slate-500 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-400 font-medium">
             Retour à la connexion
           </button>

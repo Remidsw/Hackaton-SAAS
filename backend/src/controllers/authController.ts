@@ -81,6 +81,65 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
+export const resendCode = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'Cet email est déjà vérifié' });
+    }
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpiry = new Date(Date.now() + 24 * 3600000);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationCode,
+        verificationCodeExpiry
+      }
+    });
+
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: 'EcoTrace <onboarding@resend.dev>',
+          to: email,
+          subject: 'Nouveau code de vérification - EcoTrace',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #6d28d9;">EcoTrace</h2>
+              <p>Bonjour ${user.name},</p>
+              <p>Voici votre nouveau code de vérification :</p>
+              <div style="background-color: #f3f4f6; padding: 20px; border-radius: 12px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #6d28d9; margin: 20px 0;">
+                ${verificationCode}
+              </div>
+              <p style="margin-top: 20px; font-size: 14px; color: #64748b;">Ce code est valable pendant 24 heures.</p>
+              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+              <p style="font-size: 12px; color: #94a3b8;">L'équipe EcoTrace</p>
+            </div>
+          `
+        });
+      } catch (emailError) {
+        console.error('Erreur Resend:', emailError);
+      }
+    }
+
+    res.json({ 
+      message: 'Un nouveau code a été envoyé.',
+      debugCode: process.env.RESEND_API_KEY ? undefined : verificationCode
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors du renvoi du code', error: String(error) });
+  }
+};
+
 export const verifyEmail = async (req: Request, res: Response) => {
   const { email, code } = req.body;
 
