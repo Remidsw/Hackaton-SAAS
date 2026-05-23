@@ -49,7 +49,7 @@ export default function Profile() {
         <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
           Informations Personnelles
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 font-medium">Gérez vos données et votre compte</p>
+        <p className="text-slate-900 dark:text-white font-medium">Gérez vos données et votre compte</p>
       </div>
 
       {error && (
