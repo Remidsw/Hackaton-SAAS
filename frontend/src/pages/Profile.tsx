@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Shield, Calendar, Trash2, ChevronRight, BarChart3, Building2, FileText } from 'lucide-react';
+import { User, Mail, Shield, Calendar, Trash2, BarChart3, Building2, FileText } from 'lucide-react';
 import api from '../api/client';
 
 export default function Profile() {
@@ -150,11 +150,6 @@ export default function Profile() {
                 <span className="text-2xl font-black">{profile.stats.totalBSDs}</span>
               </div>
             </div>
-          </div>
-
-          <div className="glass-card p-6 flex items-center justify-between group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
-            <div className="text-slate-600 dark:text-slate-400 font-bold">Sécurité</div>
-            <ChevronRight className="text-slate-300 group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
       </div>
