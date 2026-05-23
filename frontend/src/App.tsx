@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Home, LogOut, History } from 'lucide-react';
+import { Sun, Moon, Home, LogOut, History, User } from 'lucide-react';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +11,7 @@ import AllBSDs from './pages/AllBSDs';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
+import Profile from './pages/Profile';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token');
@@ -54,6 +55,13 @@ function Sidebar() {
           >
             <History size={24} className="min-w-[24px]" />
             <span className="font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">Historique Global</span>
+          </Link>
+          <Link 
+            to="/profile" 
+            className="flex items-center gap-4 p-4 rounded-2xl hover:bg-purple-50 dark:hover:bg-purple-900/30 text-slate-600 dark:text-slate-400 hover:text-purple-700 dark:hover:text-purple-400 transition-all group/item"
+          >
+            <User size={24} className="min-w-[24px]" />
+            <span className="font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">Profil</span>
           </Link>
         </nav>
 
@@ -114,6 +122,14 @@ function App() {
             <Route path="/forgot-password/request" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route 
+              path="/profile" 
+              element={
+                <PrivateRoute>
+                  <Profile />
+                </PrivateRoute>
+              } 
+            />
             <Route 
               path="/dashboard" 
               element={

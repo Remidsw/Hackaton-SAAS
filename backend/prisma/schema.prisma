@@ -37,7 +37,7 @@ model Site {
   companyName String
   companySiret String?     // Added for official compliance
   userId      Int
-  user        User         @relation(fields: [userId], references: [id])
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   entries     WasteEntry[]
   createdAt   DateTime     @default(now())
 }
@@ -45,7 +45,7 @@ model Site {
 model WasteEntry {
   id            Int      @id @default(autoincrement())
   siteId        Int
-  site          Site     @relation(fields: [siteId], references: [id])
+  site          Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
   wasteCode     String?  // Rubrique déchet
   wasteType     String
   adrMentions   String?  // Section 4: ADR, RID, etc.

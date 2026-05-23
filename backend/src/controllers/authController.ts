@@ -296,3 +296,62 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Erreur lors de la réinitialisation', error });
   }
 };
+
+export const getProfile = async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        _count: {
+          select: {
+            sites: true,
+          }
+        },
+        sites: {
+          include: {
+            _count: {
+              select: {
+                entries: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    const totalBSDs = user.sites.reduce((acc, site) => acc + site._count.entries, 0);
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+      stats: {
+        totalSites: user._count.sites,
+        totalBSDs
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la récupération du profil', error });
+  }
+};
+
+export const deleteAccount = async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
+  try {
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+    res.json({ message: 'Compte supprimé avec succès' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors de la suppression du compte', error });
+  }
+};
